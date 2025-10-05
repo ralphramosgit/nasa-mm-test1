@@ -13,8 +13,25 @@ An interactive 3D asteroid impact simulator built with Next.js, Three.js, React 
 ### 🌍 3D Visualization
 - Interactive 3D solar system with orbital paths
 - Realistic asteroid models with orbital mechanics
-- Earth visualization with impact zone overlay
-- Smooth camera controls and scene navigation
+- Enhanced Earth visualization with:
+  - Procedural land/ocean textures with realistic continents
+  - Surface normal mapping for terrain detail
+  - Atmospheric glow effect
+  - Dynamic rotation animation
+- Advanced impact zone visualization with:
+  - Crater formation and deformation effects
+  - Tsunami wave propagation for ocean impacts
+  - Seismic wave visualization for earthquake effects
+  - Blast radius and destruction zones
+  - Dust cloud atmospheric disturbance
+- Animated asteroid impact sequence:
+  - Asteroid approach trajectory
+  - Impact flash and explosion
+  - Progressive crater formation
+- Enhanced camera controls:
+  - Zoom capability (7-50 units range)
+  - Pan and rotate with smooth controls
+  - Close-up view for detailed impact inspection
 
 ### 🤖 ML-Powered Impact Prediction
 - Neural network model for impact consequence prediction
@@ -24,6 +41,8 @@ An interactive 3D asteroid impact simulator built with Next.js, Three.js, React 
   - Economic impact (direct/indirect damage, recovery time)
   - Population impact (casualties, displacement, affected area)
   - Environmental impact (crater size, dust cloud, seismic activity)
+  - Tsunami generation for ocean impacts (wave height, propagation, affected coastlines)
+  - Earthquake effects (magnitude, epicenter depth, shake intensity)
 
 ### 📊 Data Analysis & Comparison
 - Interactive data tables for asteroid comparison
@@ -106,8 +125,18 @@ npm run dev
 
 ### Viewing Impact Zones
 1. After running a simulation, click "Show Impact" to visualize the impact zone on Earth
-2. Toggle "Show Orbits" to view or hide asteroid orbital paths
-3. Use mouse controls to rotate, zoom, and pan the 3D scene
+2. Click "Animate Impact" to see the full impact sequence:
+   - Watch the asteroid approach Earth
+   - See the impact flash and explosion
+   - Observe crater formation
+   - View tsunami wave propagation (for ocean impacts)
+   - See seismic wave expansion (earthquake effects)
+3. Toggle "Show Orbits" to view or hide asteroid orbital paths
+4. Use mouse controls to interact with the 3D scene:
+   - **Rotate**: Left-click and drag
+   - **Zoom**: Scroll wheel (zoom range: 7-50 units)
+   - **Pan**: Right-click and drag
+   - Zoom in close to see detailed crater and wave effects
 
 ## Project Structure
 
@@ -119,10 +148,12 @@ nasa-mm-test1/
 │   └── globals.css          # Global styles
 ├── components/              # React components
 │   ├── 3d/                  # 3D visualization components
-│   │   ├── ImpactScene.tsx
-│   │   ├── Asteroid.tsx
-│   │   ├── OrbitalPath.tsx
-│   │   └── EarthWithImpactZone.tsx
+│   │   ├── ImpactScene.tsx          # Main 3D scene container
+│   │   ├── EnhancedEarth.tsx        # Enhanced Earth with realistic textures
+│   │   ├── ImpactAsteroid.tsx       # Animated asteroid impact
+│   │   ├── Asteroid.tsx             # Asteroid model
+│   │   ├── OrbitalPath.tsx          # Orbital path visualization
+│   │   └── EarthWithImpactZone.tsx  # Legacy Earth component
 │   ├── tables/              # Data table components
 │   │   ├── AsteroidDataTable.tsx
 │   │   ├── ImpactPredictionTable.tsx
