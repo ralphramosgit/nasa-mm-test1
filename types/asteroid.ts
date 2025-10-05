@@ -73,7 +73,23 @@ export interface SecondaryEffects {
     craterSize: number;
     dustCloudRadius: number;
     seismicActivity: number;
+    tsunamiWaves?: TsunamiData;
+    earthquakes?: EarthquakeData;
   };
+}
+
+export interface TsunamiData {
+  maxWaveHeight: number; // in meters
+  propagationRadius: number; // in km
+  affectedCoastlines: number;
+  waveSpeed: number; // in km/h
+}
+
+export interface EarthquakeData {
+  magnitude: number; // Richter scale
+  epicenterDepth: number; // in km
+  propagationRadius: number; // in km
+  shakeIntensity: number; // 0-1 scale
 }
 
 export interface MitigationScenario {

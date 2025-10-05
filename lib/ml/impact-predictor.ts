@@ -6,6 +6,8 @@ import {
   MitigationScenario,
   SimulationParams,
   GeologicalData,
+  TsunamiData,
+  EarthquakeData,
 } from '@/types/asteroid';
 
 export class ImpactPredictor {
@@ -102,6 +104,8 @@ export class ImpactPredictor {
         craterSize: prediction[3],
         dustCloudRadius: prediction[3] * 10,
         seismicActivity: this.calculateSeismicActivity(kineticEnergyMegatons),
+        tsunamiWaves: this.calculateTsunami(params, kineticEnergyMegatons),
+        earthquakes: this.calculateEarthquake(kineticEnergyMegatons, prediction[3]),
       },
     };
 
@@ -204,6 +208,80 @@ export class ImpactPredictor {
   }
 
   /**
+   * Calculate tsunami effects for ocean impacts
+   */
+  private calculateTsunami(
+    params: SimulationParams,
+    energyMegatons: number
+  ): TsunamiData | undefined {
+    // Check if impact is in ocean (simplified: check latitude for likely ocean areas)
+    const isOcean = this.isOceanImpact(params.targetLocation.latitude, params.targetLocation.longitude);
+    
+    if (!isOcean) {
+      return undefined;
+    }
+
+    // Calculate tsunami parameters based on impact energy
+    const maxWaveHeight = Math.min(Math.sqrt(energyMegatons) * 10, 300); // meters, capped at 300m
+    const propagationRadius = Math.min(energyMegatons * 100, 10000); // km, capped at 10,000km
+    const waveSpeed = 800; // km/h (typical tsunami speed)
+    const affectedCoastlines = Math.floor(propagationRadius / 500); // rough estimate
+
+    return {
+      maxWaveHeight,
+      propagationRadius,
+      affectedCoastlines,
+      waveSpeed,
+    };
+  }
+
+  /**
+   * Calculate earthquake effects
+   */
+  private calculateEarthquake(
+    energyMegatons: number,
+    craterSize: number
+  ): EarthquakeData {
+    const magnitude = Math.min(Math.log10(energyMegatons * 100) + 4, 9.5); // Richter scale, capped at 9.5
+    const epicenterDepth = craterSize * 0.5; // km, typically half the crater diameter
+    const propagationRadius = Math.pow(10, magnitude) * 10; // km
+    const shakeIntensity = Math.min(energyMegatons / 1000, 1); // 0-1 scale
+
+    return {
+      magnitude,
+      epicenterDepth,
+      propagationRadius,
+      shakeIntensity,
+    };
+  }
+
+  /**
+   * Check if impact location is in ocean
+   */
+  private isOceanImpact(latitude: number, longitude: number): boolean {
+    // Simplified ocean detection
+    // In production, use actual ocean/land map data
+    // For now, assume specific regions are ocean
+    
+    // Pacific Ocean regions
+    if (longitude > 120 && longitude < 240 && Math.abs(latitude) < 60) {
+      return true;
+    }
+    
+    // Atlantic Ocean regions
+    if (longitude > -60 && longitude < 20 && Math.abs(latitude) < 60) {
+      return true;
+    }
+    
+    // Indian Ocean regions
+    if (longitude > 40 && longitude < 120 && latitude < 20 && latitude > -40) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
    * Calculate impact probability
    */
   private calculateImpactProbability(params: SimulationParams): number {
@@ -217,7 +295,7 @@ export class ImpactPredictor {
    */
   private generateMitigationScenarios(
     energyMegatons: number,
-    params?: SimulationParams
+    _params?: SimulationParams
   ): MitigationScenario[] {
     return [
       {
@@ -255,7 +333,7 @@ export class ImpactPredictor {
         name: 'Mass Evacuation',
         description: 'Evacuate population from predicted impact zone',
         successProbability: 0.95,
-        cost: params?.targetLocation.latitude ? 2000000000 : 1000000000,
+        cost: _params?.targetLocation.latitude ? 2000000000 : 1000000000,
         timeRequired: 1,
         effectivenessScore: 60,
       },
