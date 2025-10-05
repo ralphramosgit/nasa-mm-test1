@@ -2,17 +2,19 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Stars } from '@react-three/drei';
-import { NeoData } from '@/types/asteroid';
-import { ImpactZone } from '@/types/asteroid';
+import { NeoData, ImpactZone, ImpactPrediction } from '@/types/asteroid';
 import Asteroid from './Asteroid';
 import OrbitalPath from './OrbitalPath';
-import EarthWithImpactZone from './EarthWithImpactZone';
+import EnhancedEarth from './EnhancedEarth';
+import ImpactAsteroid from './ImpactAsteroid';
 
 interface ImpactSceneProps {
   selectedAsteroid?: NeoData;
   impactZone?: ImpactZone;
   showOrbits?: boolean;
   showImpact?: boolean;
+  prediction?: ImpactPrediction;
+  animateImpact?: boolean;
 }
 
 export default function ImpactScene({
@@ -20,12 +22,20 @@ export default function ImpactScene({
   impactZone,
   showOrbits = true,
   showImpact = false,
+  prediction,
+  animateImpact = false,
 }: ImpactSceneProps) {
   return (
     <div className="w-full h-[600px] bg-black rounded-lg overflow-hidden">
       <Canvas>
         <PerspectiveCamera makeDefault position={[0, 5, 20]} />
-        <OrbitControls enableZoom={true} enablePan={true} />
+        <OrbitControls 
+          enableZoom={true} 
+          enablePan={true}
+          minDistance={7}
+          maxDistance={50}
+          zoomSpeed={1.2}
+        />
 
         {/* Lighting */}
         <ambientLight intensity={0.3} />
@@ -52,9 +62,20 @@ export default function ImpactScene({
           />
         </mesh>
 
-        {/* Earth with impact zone */}
+        {/* Earth with enhanced impact visualization */}
         <group position={[10, 0, 0]}>
-          <EarthWithImpactZone impactZone={impactZone} showImpact={showImpact} />
+          <EnhancedEarth 
+            impactZone={impactZone} 
+            showImpact={showImpact}
+            secondaryEffects={prediction?.secondaryEffects}
+            animateImpact={animateImpact}
+          />
+          {/* Animated asteroid approaching Earth */}
+          <ImpactAsteroid
+            impactZone={impactZone}
+            animate={animateImpact && showImpact}
+            asteroidSize={0.4}
+          />
         </group>
 
         {/* Selected asteroid and orbit */}
