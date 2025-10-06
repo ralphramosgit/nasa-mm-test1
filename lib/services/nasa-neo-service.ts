@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { NeoData } from '@/types/asteroid';
+import { MockDataService } from './mock-data-service';
 
 const NASA_API_KEY = process.env.NEXT_PUBLIC_NASA_API_KEY || 'DEMO_KEY';
 const NASA_NEO_API_BASE = 'https://api.nasa.gov/neo/rest/v1';
@@ -44,13 +45,16 @@ export class NasaNeoService {
           params: {
             api_key: NASA_API_KEY,
           },
+          timeout: 5000,
         }
       );
 
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`Error fetching asteroid ${asteroidId}:`, error);
-      return null;
+      
+      // Fallback to mock data
+      return await MockDataService.getAsteroidById(asteroidId);
     }
   }
 
@@ -69,6 +73,7 @@ export class NasaNeoService {
           size,
           api_key: NASA_API_KEY,
         },
+        timeout: 5000, // 5 second timeout
       });
 
       return {
@@ -76,13 +81,22 @@ export class NasaNeoService {
         totalPages: response.data.page.total_pages,
         currentPage: response.data.page.number,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error browsing asteroids:', error);
-      return {
-        asteroids: [],
-        totalPages: 0,
-        currentPage: 0,
-      };
+      
+      // If rate limited (429) or timeout, use mock data
+      const isAxiosError = error && typeof error === 'object' && 'response' in error;
+      const isRateLimit = isAxiosError && (error as { response: { status: number } }).response?.status === 429;
+      const isTimeout = error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'ECONNABORTED';
+      
+      if (isRateLimit || isTimeout) {
+        console.log('Using mock data due to NASA API rate limiting or timeout');
+        return await MockDataService.getAsteroids(page, size);
+      }
+      
+      // For any other error, still return mock data to keep the app working
+      console.log('Using mock data due to API error');
+      return await MockDataService.getAsteroids(page, size);
     }
   }
 

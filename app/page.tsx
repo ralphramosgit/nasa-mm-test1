@@ -2,14 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { NeoData, ImpactPrediction, SimulationParams } from '@/types/asteroid';
+import Link from 'next/link';
+import { NeoData } from '@/types/asteroid';
 import { NasaNeoService } from '@/lib/services/nasa-neo-service';
-import { UsgsService } from '@/lib/services/usgs-service';
-import { ImpactPredictor } from '@/lib/ml/impact-predictor';
 import AsteroidDataTable from '@/components/tables/AsteroidDataTable';
-import ImpactPredictionTable from '@/components/tables/ImpactPredictionTable';
-import MitigationTable from '@/components/tables/MitigationTable';
-import SimulationControls from '@/components/ui/SimulationControls';
 
 // Dynamically import 3D components to avoid SSR issues
 const ImpactScene = dynamic(() => import('@/components/3d/ImpactScene'), {
@@ -24,10 +20,10 @@ const ImpactScene = dynamic(() => import('@/components/3d/ImpactScene'), {
 export default function Home() {
   const [asteroids, setAsteroids] = useState<NeoData[]>([]);
   const [selectedAsteroid, setSelectedAsteroid] = useState<NeoData | undefined>();
-  const [prediction, setPrediction] = useState<ImpactPrediction | undefined>();
-  const [isLoading, setIsLoading] = useState(false);
   const [showOrbits, setShowOrbits] = useState(true);
   const [showImpact, setShowImpact] = useState(false);
+  const [usingMockData, setUsingMockData] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Load asteroids on mount
   useEffect(() => {
@@ -39,45 +35,21 @@ export default function Home() {
     try {
       const result = await NasaNeoService.browseAsteroids(0, 20);
       setAsteroids(result.asteroids);
+      
+      // Check if we got the expected number of asteroids (indicating mock data usage)
+      if (result.asteroids.length === 6 && result.asteroids[0]?.name === "54 Alexandra") {
+        setUsingMockData(true);
+      }
     } catch (error) {
       console.error('Error loading asteroids:', error);
+      setUsingMockData(true);
     }
     setIsLoading(false);
   };
 
   const handleAsteroidSelect = (asteroid: NeoData) => {
     setSelectedAsteroid(asteroid);
-    setPrediction(undefined);
     setShowImpact(false);
-  };
-
-  const handleSimulate = async (params: SimulationParams) => {
-    if (!selectedAsteroid) return;
-
-    setIsLoading(true);
-    try {
-      // Get geological data for target location
-      const geologicalData = await UsgsService.getGeologicalData(
-        params.targetLocation.latitude,
-        params.targetLocation.longitude
-      );
-
-      // Run ML prediction
-      const predictor = new ImpactPredictor();
-      await predictor.initializeModel();
-
-      const impactPrediction = await predictor.predictImpact(
-        params,
-        geologicalData,
-        selectedAsteroid.id
-      );
-
-      setPrediction(impactPrediction);
-      setShowImpact(true);
-    } catch (error) {
-      console.error('Error running simulation:', error);
-    }
-    setIsLoading(false);
   };
 
   return (
@@ -88,9 +60,39 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Asteroid Impact Simulator
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             Interactive 3D visualization and ML-powered impact prediction using NASA NEO and USGS data
           </p>
+          
+          {/* Navigation Links */}
+          <div className="flex flex-wrap gap-4 mb-4">
+            <Link 
+              href="/impact"
+              className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg"
+            >
+              🚀 3D Impact Simulator
+            </Link>
+            <Link 
+              href="/mapbox"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              🌍 Mapbox Globe Version
+            </Link>
+            <Link 
+              href="/test"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
+            >
+              🔧 Test Maps
+            </Link>
+          </div>
+
+          {usingMockData && (
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+                ⚠️ Using sample data due to NASA API rate limiting. The simulation features still work normally!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 3D Visualization */}
@@ -106,21 +108,9 @@ export default function Home() {
             >
               {showOrbits ? 'Hide Orbits' : 'Show Orbits'}
             </button>
-            <button
-              onClick={() => setShowImpact(!showImpact)}
-              disabled={!prediction}
-              className={`px-4 py-2 rounded-md ${
-                showImpact
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {showImpact ? 'Hide Impact' : 'Show Impact'}
-            </button>
           </div>
           <ImpactScene
             selectedAsteroid={selectedAsteroid}
-            impactZone={prediction?.impactZone}
             showOrbits={showOrbits}
             showImpact={showImpact}
           />
@@ -141,27 +131,12 @@ export default function Home() {
               />
             </div>
 
-            {/* Impact Prediction */}
-            {prediction && (
-              <div>
-                <ImpactPredictionTable prediction={prediction} />
-              </div>
-            )}
-
-            {/* Mitigation Scenarios */}
-            {prediction && prediction.mitigationScenarios.length > 0 && (
-              <div>
-                <MitigationTable scenarios={prediction.mitigationScenarios} />
-              </div>
-            )}
+            {/* Mitigation Scenarios - removed, now on Mapbox page */}
           </div>
 
           {/* Right Column - Simulation Controls */}
           <div className="space-y-8">
-            <SimulationControls
-              onSimulate={handleSimulate}
-              isLoading={isLoading}
-            />
+            {/* SimulationControls moved next to map above. Keep selected asteroid card here. */}
 
             {selectedAsteroid && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">

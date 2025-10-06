@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SimulationParams } from '@/types/asteroid';
 
 interface SimulationControlsProps {
   onSimulate: (params: SimulationParams) => void;
   isLoading: boolean;
+  selectedLocation?: { latitude: number; longitude: number };
 }
 
 export default function SimulationControls({
   onSimulate,
   isLoading,
+  selectedLocation,
 }: SimulationControlsProps) {
   const [params, setParams] = useState<SimulationParams>({
     asteroidDiameter: 0.5,
@@ -22,6 +24,13 @@ export default function SimulationControls({
     },
   });
 
+  // Sync external map selection into form
+  useEffect(() => {
+    if (selectedLocation) {
+      setParams(p => ({ ...p, targetLocation: { ...selectedLocation } }));
+    }
+  }, [selectedLocation]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSimulate(params);
@@ -32,6 +41,9 @@ export default function SimulationControls({
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         Simulation Parameters
       </h3>
+      {selectedLocation && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Location selected on map will overwrite latitude/longitude fields.</p>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
